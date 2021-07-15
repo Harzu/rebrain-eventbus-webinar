@@ -1,0 +1,21 @@
+run:
+  timeout: 3m
+  tests: true
+
+linters:
+  enable:
+    - deadcode
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - structcheck
+    - typecheck
+    - varcheck
+    - bodyclose
+    - depguard
+    - goimports
+    - dupl
+  enable-all: false
+  disable-all: true
