@@ -32,7 +32,7 @@ func NewApplication(cfg *config.Config, logger *zap.Logger) (*Application, error
 	}
 
 	metricsClient := metrics.New()
-	handler := rmqHandler.NewHandler(serviceContainer, logger, metricsClient)
+	handler := rmqHandler.NewHandler(cfg.RMQConsumer.Queues, serviceContainer, metricsClient)
 	consumer, err := rabbitmq.NewConsumer(cfg.RMQConsumer, handler, logger)
 	if err != nil {
 		return nil, err

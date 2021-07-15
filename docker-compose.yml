@@ -15,20 +15,20 @@ services:
       - 15672:15672
 
   zookeeper:
-    image: zookeeper:3.6
+    image: wurstmeister/zookeeper
     container_name: zookeeper
     restart: always
-    environment:
-      ZOO_MY_ID: 1
+    ports:
+      - 2181:2181
 
   kafka:
     image: wurstmeister/kafka
     ports:
-      - "9092"
+      - 9092:9092
     depends_on:
       - zookeeper
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: 192.168.99.100
+      KAFKA_ADVERTISED_HOST_NAME: kafka
       KAFKA_CREATE_TOPICS: "payment_success:1:1"
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
     volumes:

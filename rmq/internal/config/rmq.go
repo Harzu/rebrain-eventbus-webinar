@@ -5,10 +5,20 @@ import "time"
 type RMQConsumer struct {
 	ConnectionURL    string        `envconfig:"RMQ_CONSUMER_CONNECTION_URL"`
 	ReconnectTimeout time.Duration `envconfig:"RMQ_CONSUMER_CONNECTION_TIMEOUT,default=1m"`
-	OrderCreated     RMQQueue
+	Queues           *RMQQueues
 }
 
-type RMQQueue struct {
+type RMQQueues struct {
+	OrderCreated queue
+}
+
+func (q *RMQQueues) Slice() []queue {
+	return []queue{
+		q.OrderCreated,
+	}
+}
+
+type queue struct {
 	Name       string
 	RoutingKey string `envconfig:"optional"`
 	Exchange   string

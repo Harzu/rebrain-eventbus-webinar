@@ -35,7 +35,7 @@ func NewApplication(cfg *config.Config, logger *zap.Logger) (*Application, error
 
 	serviceContainer := services.New(rmqClient)
 	metricsClient := metrics.New()
-	handler := kafkahandler.NewHandler(serviceContainer, metricsClient)
+	handler := kafkahandler.NewHandler(cfg.KafkaConsumer.Topics, serviceContainer, metricsClient)
 	consumer, err := kafka.NewConsumer(cfg.KafkaConsumer, logger, handler, metricsClient)
 	if err != nil {
 		return nil, err

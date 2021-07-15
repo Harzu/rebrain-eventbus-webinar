@@ -10,6 +10,7 @@ import (
 	"github.com/streadway/amqp"
 	"go.uber.org/zap"
 
+	"github.com/Harzu/rebrain-eventbus-webinar/rmq/internal/config"
 	"github.com/Harzu/rebrain-eventbus-webinar/rmq/internal/services"
 	"github.com/Harzu/rebrain-eventbus-webinar/rmq/internal/system/contextlogger"
 	"github.com/Harzu/rebrain-eventbus-webinar/rmq/internal/system/metrics"
@@ -17,7 +18,10 @@ import (
 
 const rmqLabelPrefix = "rmq_"
 
-var HandlerNotRegisterErr = errors.New("handler not registered")
+var (
+	HandlerNotRegisteredErr = errors.New("handler not registered")
+	InvalidMessageErr       = errors.New("invalid message")
+)
 
 type queueHandler interface {
 	Handle(ctx context.Context, message interface{}) error
@@ -33,10 +37,16 @@ type handler struct {
 	metrics  *metrics.Client
 }
 
-func NewHandler(_ *services.Container, _ *zap.Logger, metrics *metrics.Client) Handler {
+func NewHandler(
+	cfg *config.RMQQueues,
+	services *services.Container,
+	metrics *metrics.Client,
+) Handler {
 	h := &handler{
-		metrics:  metrics,
-		handlers: map[string]queueHandler{},
+		metrics: metrics,
+		handlers: map[string]queueHandler{
+			cfg.OrderCreated.Name: newOrderCreatedHandler(services.KafkaProducer),
+		},
 	}
 
 	return h
@@ -58,7 +68,7 @@ func (h handler) Handle(ctx context.Context, queueName string, message amqp.Deli
 	h.metrics.EventbusMessageCount.AddClaimed(makeMessageType(queueName))
 
 	handler, err := h.findHandler(queueName)
-	if errors.Is(err, HandlerNotRegisterErr) {
+	if errors.Is(err, HandlerNotRegisteredErr) {
 		msgLogger.Info("skip message", zap.Error(err))
 		h.metrics.EventbusMessageCount.AddSkipped(makeMessageType(queueName))
 		return
@@ -87,8 +97,8 @@ func (h handler) Handle(ctx context.Context, queueName string, message amqp.Deli
 
 func (h handler) findHandler(queueName string) (queueHandler, error) {
 	handler, ok := h.handlers[queueName]
-	if ok {
-		return handler, nil
+	if !ok {
+		return nil, HandlerNotRegisteredErr
 	}
 
 	return handler, nil

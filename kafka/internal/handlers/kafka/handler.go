@@ -10,6 +10,7 @@ import (
 	"github.com/Shopify/sarama"
 	"go.uber.org/zap"
 
+	"github.com/Harzu/rebrain-eventbus-webinar/kafka/internal/config"
 	"github.com/Harzu/rebrain-eventbus-webinar/kafka/internal/services"
 	"github.com/Harzu/rebrain-eventbus-webinar/kafka/internal/system/contextlogger"
 	"github.com/Harzu/rebrain-eventbus-webinar/kafka/internal/system/metrics"
@@ -17,7 +18,10 @@ import (
 
 const kafkaLabelPrefix = "kfk_"
 
-var ErrHandlerNotRegistered = errors.New("handler not registered")
+var (
+	HandlerNotRegisteredErr = errors.New("handler not registered")
+	InvalidMessageErr       = errors.New("invalid message")
+)
 
 type topicHandler interface {
 	Handle(ctx context.Context, message interface{}) error
@@ -29,10 +33,12 @@ type consumerGroupHandler struct {
 	metrics  *metrics.Client
 }
 
-func NewHandler(services *services.Container, metrics *metrics.Client) sarama.ConsumerGroupHandler {
+func NewHandler(topics *config.KafkaTopics, services *services.Container, metrics *metrics.Client) sarama.ConsumerGroupHandler {
 	return &consumerGroupHandler{
-		handlers: make(map[string]topicHandler),
-		metrics:  metrics,
+		metrics: metrics,
+		handlers: map[string]topicHandler{
+			topics.PaymentSuccess: newPaymentSuccessHandler(services.RMQProducer),
+		},
 	}
 }
 
@@ -73,7 +79,7 @@ func (h consumerGroupHandler) consumeMessage(ctx context.Context, consumerMessag
 	h.metrics.KafkaMessageCurrentOffsetNumber.Set(consumerMessage.Topic, consumerMessage.Offset)
 
 	handler, err := h.findHandler(consumerMessage)
-	if errors.Is(err, ErrHandlerNotRegistered) {
+	if errors.Is(err, HandlerNotRegisteredErr) {
 		logger.Info("skip message", zap.Error(err))
 		h.metrics.EventbusMessageCount.AddSkipped(makeMessageType(consumerMessage.Topic))
 		return
@@ -103,7 +109,7 @@ func (h consumerGroupHandler) consumeMessage(ctx context.Context, consumerMessag
 func (h consumerGroupHandler) findHandler(consumerMessage *sarama.ConsumerMessage) (topicHandler, error) {
 	handler, ok := h.handlers[consumerMessage.Topic]
 	if !ok {
-		return nil, ErrHandlerNotRegistered
+		return nil, HandlerNotRegisteredErr
 	}
 	return handler, nil
 }

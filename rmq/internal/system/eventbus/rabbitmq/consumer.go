@@ -23,7 +23,7 @@ type Consumer struct {
 	ch      *amqp.Channel
 	config  *config.RMQConsumer
 	handler rabbitmq.Handler
-	queues  []config.RMQQueue
+	queues  *config.RMQQueues
 }
 
 func NewConsumer(cfg *config.RMQConsumer, handler rabbitmq.Handler, logger *zap.Logger) (*Consumer, error) {
@@ -36,9 +36,7 @@ func NewConsumer(cfg *config.RMQConsumer, handler rabbitmq.Handler, logger *zap.
 		logger:  logger,
 		config:  cfg,
 		handler: handler,
-		queues: []config.RMQQueue{
-			cfg.OrderCreated,
-		},
+		queues:  cfg.Queues,
 	}, nil
 }
 
@@ -54,7 +52,7 @@ func (c *Consumer) Consume() {
 			c.logger.Info("successfully connected to RabbitMQ")
 
 			wg := &sync.WaitGroup{}
-			for _, q := range c.queues {
+			for _, q := range c.queues.Slice() {
 				if q.Name == "" {
 					continue
 				}

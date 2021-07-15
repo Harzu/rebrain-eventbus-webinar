@@ -3,6 +3,7 @@ module github.com/Harzu/rebrain-eventbus-webinar/kafka
 go 1.16
 
 require (
+	github.com/Harzu/rebrain-eventbus-webinar/rmq v1.0.0 // indirect
 	github.com/Shopify/sarama v1.29.1
 	github.com/prometheus/client_golang v1.11.0
 	github.com/streadway/amqp v1.0.0 // indirect
