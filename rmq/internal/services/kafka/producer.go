@@ -23,7 +23,7 @@ type Producer struct {
 
 func NewProducer(cfg *config.KafkaProducer, logger *zap.Logger) (*Producer, error) {
 	saramaConfig := sarama.NewConfig()
-	saramaConfig.Producer.RequiredAcks = sarama.WaitForLocal
+	saramaConfig.Producer.RequiredAcks = sarama.WaitForAll
 	saramaConfig.Producer.Retry.Max = 10
 	saramaConfig.Producer.Return.Successes = true
 

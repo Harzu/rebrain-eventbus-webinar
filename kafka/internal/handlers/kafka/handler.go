@@ -33,7 +33,11 @@ type consumerGroupHandler struct {
 	metrics  *metrics.Client
 }
 
-func NewHandler(topics *config.KafkaTopics, services *services.Container, metrics *metrics.Client) sarama.ConsumerGroupHandler {
+func NewHandler(
+	topics *config.KafkaTopics,
+	services *services.Container,
+	metrics *metrics.Client,
+) sarama.ConsumerGroupHandler {
 	return &consumerGroupHandler{
 		metrics: metrics,
 		handlers: map[string]topicHandler{
@@ -50,7 +54,10 @@ func (h consumerGroupHandler) Cleanup(sarama.ConsumerGroupSession) error {
 	return nil
 }
 
-func (h consumerGroupHandler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+func (h consumerGroupHandler) ConsumeClaim(
+	session sarama.ConsumerGroupSession,
+	claim sarama.ConsumerGroupClaim,
+) error {
 	for message := range claim.Messages() {
 		session.MarkMessage(message, "")
 		h.consumeMessage(session.Context(), message)
