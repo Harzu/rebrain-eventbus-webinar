@@ -37,19 +37,13 @@ func NewConsumer(
 	saramaConfig := sarama.NewConfig()
 	saramaConfig.Version = version
 
-	if cfg.SASLEnabled {
-		saramaConfig.Net.SASL.User = cfg.User
-		saramaConfig.Net.SASL.Password = cfg.Password
-		saramaConfig.Net.SASL.Enable = true
-	}
-
-	logger.Info("Connecting to Kafka...")
+	logger.Info("connecting to Kafka...")
 	client, err := sarama.NewClient(cfg.Brokers, saramaConfig)
 	if err != nil {
 		return nil, fmt.Errorf("make Kafka client error: %w", err)
 	}
 
-	logger.Info("Successfully connected to Kafka")
+	logger.Info("successfully connected to Kafka")
 	consumerGroup, err := sarama.NewConsumerGroupFromClient(cfg.ConsumerGroup, client)
 	if err != nil {
 		return nil, fmt.Errorf("make Kafka consumer group error: %w", err)

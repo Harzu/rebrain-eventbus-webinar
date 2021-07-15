@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"runtime/debug"
 	"time"
 
 	"github.com/Shopify/sarama"
@@ -59,9 +58,10 @@ func (h consumerGroupHandler) ConsumeClaim(
 	claim sarama.ConsumerGroupClaim,
 ) error {
 	for message := range claim.Messages() {
-		session.MarkMessage(message, "")
 		h.consumeMessage(session.Context(), message)
+		session.MarkMessage(message, "")
 	}
+
 	return nil
 }
 
@@ -71,13 +71,6 @@ func (h consumerGroupHandler) consumeMessage(ctx context.Context, consumerMessag
 
 	startTime := time.Now()
 	defer func() {
-		if r := recover(); r != nil {
-			logger.Error(
-				"panic handle message",
-				zap.Error(r.(error)),
-				zap.Stack(string(debug.Stack())),
-			)
-		}
 		h.metrics.EventbusMessagesProcessingTime.Add(makeMessageType(consumerMessage.Topic), time.Since(startTime).Seconds())
 	}()
 
